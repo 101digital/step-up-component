@@ -1,7 +1,17 @@
-type StepUpClient = {};
+
+import { AxiosInstance } from 'axios';
+
+export type StepUpComponentConfig = {
+  authorizeClient: AxiosInstance;
+};
 
 export class StepUpService {
   private static _instance: StepUpService = new StepUpService();
+  private _config?: StepUpComponentConfig;
+
+  public configure(configs: StepUpComponentConfig) {
+    this._config = configs;
+  }
 
   constructor() {
     if (StepUpService._instance) {
@@ -15,6 +25,4 @@ export class StepUpService {
   public static instance(): StepUpService {
     return StepUpService._instance;
   }
-
-  public initClients = (clients: StepUpClient) => {};
 }
