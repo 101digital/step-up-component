@@ -1,7 +1,7 @@
 {
   "name": "step-up-component",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "",
   "repository": {
     "url": "https://github.com/101digital/step-up-component.git"
@@ -23,6 +23,7 @@
   "dependencies": {},
   "peerDependencies": {
     "react-native-auth-component": "https://github.com/101digital/react-native-auth-component.git",
+    "react-native-theme-component": "https://github.com/101digital/react-native-theme-component.git",
     "react-native-biometrics": "^3.0.1",
     "lodash": "^4.17.21",
     "react-native-gesture-handler": "2.9.0",
