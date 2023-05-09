@@ -4,6 +4,12 @@ import pkceChallenge from 'react-native-pkce-challenge';
 
 export type StepUpComponentConfig = {
   authorizeClient: AxiosInstance;
+  nonce: string;
+  clientId: string;
+  scope: string;
+  responseType: string;
+  responseMode: string;
+  acr_values: string;
 };
 
 type PKCE = {
@@ -15,10 +21,15 @@ export class StepUpService {
   private static _instance: StepUpService = new StepUpService();
   private _configs?: StepUpComponentConfig;
   private _pkce: PKCE = pkceChallenge();
+  private _accessToken: string = '';
 
 
   public configure(configs: StepUpComponentConfig) {
     this._configs = configs;
+  }
+
+  public setAccessToken(acessToken: string) {
+    this._accessToken = acessToken;
   }
 
   private refreshPKCEChallenge() {
