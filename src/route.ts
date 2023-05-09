@@ -1,6 +1,6 @@
 enum Route {
-  'BIOMETRIC_VERIFICATION' = 'biometric-verification',
-  'PIN_VERIFICATION' = 'biometric-verification'
+  'BIOMETRIC_VERIFICATION' = 'stepup-biometric-verification',
+  'PIN_VERIFICATION' = 'stepup-pin-verification',
 }
 
 export default Route;

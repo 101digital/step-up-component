@@ -1,16 +1,29 @@
 
 import { AxiosInstance } from 'axios';
+import pkceChallenge from 'react-native-pkce-challenge';
 
 export type StepUpComponentConfig = {
   authorizeClient: AxiosInstance;
 };
 
+type PKCE = {
+  codeChallenge: string;
+  codeVerifier: string;
+};
+
 export class StepUpService {
   private static _instance: StepUpService = new StepUpService();
-  private _config?: StepUpComponentConfig;
+  private _configs?: StepUpComponentConfig;
+  private _pkce: PKCE = pkceChallenge();
+
 
   public configure(configs: StepUpComponentConfig) {
-    this._config = configs;
+    this._configs = configs;
+  }
+
+  private refreshPKCEChallenge() {
+    this._pkce = pkceChallenge();
+    return this._pkce;
   }
 
   constructor() {
@@ -25,4 +38,35 @@ export class StepUpService {
   public static instance(): StepUpService {
     return StepUpService._instance;
   }
+
+
+  public authorizePushOnly = async (
+    loginHintToken: string,
+    clientIdInit?: string,
+    scope?: string
+  ) => {
+    const { clientId, responseType, responseMode } = this._configs || {};
+    try {
+      const { codeChallenge } = this.refreshPKCEChallenge();
+      // const responseAuth = await AuthApiClient.instance()
+      //   .getAuthApiClient()
+      //   .get('as/authorize', {
+      //     params: {
+      //       response_type: responseType,
+      //       client_id: clientIdInit ? clientIdInit : clientId,
+      //       scope: scope ? scope : 'openid profilep',
+      //       code_challenge: codeChallenge,
+      //       code_challenge_method: 'S256',
+      //       response_mode: responseMode,
+      //       acr_values: 'Push_Only',
+      //       login_hint_token: loginHintToken,
+      //     },
+      //   });
+      // if (responseAuth) {
+      //   return responseAuth.data;
+      // }
+    } catch (error) {
+      return false;
+    }
+  };
 }
