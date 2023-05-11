@@ -5,12 +5,15 @@ export interface StepUpContextData {
   authorize: () => Promise<boolean | undefined>;
   isLoadingAuthorize: boolean;
   obtainNewAccessToken: () => Promise<boolean>;
+  saveResumeURL: (url: string) => void;
+  resumeURL?: string;
 }
 
 export const StepUpDefaultValue: StepUpContextData = {
   authorize: async () => undefined,
   isLoadingAuthorize: false,
   obtainNewAccessToken: async () => false,
+  saveResumeURL: () => false
 };
 
 
@@ -39,6 +42,7 @@ export function useStepUpContextValue(): StepUpContextData {
 
   const obtainNewAccessToken = useCallback(async () => {
     try {
+      console.log('obtainNewAccessToken -> _resumeURL', _resumeURL);
       if (_resumeURL) {
         const authResponse = await StepUpServiceInstance.resumeUrl(_resumeURL);
 
@@ -59,5 +63,7 @@ export function useStepUpContextValue(): StepUpContextData {
     authorize,
     isLoadingAuthorize: _isLoadingAuthorize,
     obtainNewAccessToken,
-  }), [_isLoadingAuthorize]);
+    saveResumeURL,
+    resumeURL: _resumeURL
+  }), [_isLoadingAuthorize, _resumeURL]);
 }

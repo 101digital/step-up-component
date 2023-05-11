@@ -1,8 +1,8 @@
-
-import axios, { AxiosInstance} from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import qs from 'qs';
 import pkceChallenge from 'react-native-pkce-challenge';
 import { AuthServices } from 'react-native-auth-component';
+import CryptoStore from './crypto';
 
 export type StepUpComponentConfig = {
   nonce: string;
@@ -14,6 +14,7 @@ export type StepUpComponentConfig = {
   identityPingUrl: string;
   authBaseUrl: string;
   authGrantType: string;
+  token: string;
 };
 
 type PKCE = {
@@ -26,7 +27,6 @@ export class StepUpService {
   private _configs?: StepUpComponentConfig;
   private _pkce: PKCE = pkceChallenge();
 
-
   public configure(configs: StepUpComponentConfig) {
     this._configs = configs;
   }
@@ -34,6 +34,14 @@ export class StepUpService {
   private refreshPKCEChallenge() {
     this._pkce = pkceChallenge();
     return this._pkce;
+  }
+
+  public async setToken(token: string) {
+    return CryptoStore.encryptData(token, '', 'SHA256').then((encryptedToken) => {
+      if(typeof encryptedToken === 'string' && this._configs) {
+        this._configs.token = encryptedToken;
+      }
+    })
   }
 
   constructor() {
@@ -54,7 +62,10 @@ export class StepUpService {
     return response.data;
   };
 
-  public obtainTokenSingleFactor = async (authorizeCode: string, scope?: string) => {
+  public obtainTokenSingleFactor = async (
+    authorizeCode: string,
+    scope?: string
+  ) => {
     const { clientId, authBaseUrl, authGrantType } = this._configs || {};
     const { codeVerifier } = this._pkce;
     const body = qs.stringify({
@@ -71,22 +82,23 @@ export class StepUpService {
   };
 
   public authorizePushOnly = async (loginHintToken: string) => {
-    const { clientId, responseType, responseMode, authBaseUrl, scope } = this._configs || {};
+    const { clientId, responseType, responseMode, authBaseUrl, scope } =
+      this._configs || {};
     try {
       const { codeChallenge } = this.refreshPKCEChallenge();
-      const responseAuth = await axios.get(`${authBaseUrl}/as/authorize`,{
-          params: {
-            response_type: responseType,
-            client_id: clientId,
-            scope: scope,
-            code_challenge: codeChallenge,
-            code_challenge_method: 'S256',
-            response_mode: responseMode,
-            acr_values: 'Push_Only',
-            login_hint_token: loginHintToken,
-            nonce: 'SHA256'
-          },
-        });
+      const responseAuth = await axios.get(`${authBaseUrl}/as/authorize`, {
+        params: {
+          response_type: responseType,
+          client_id: clientId,
+          scope: scope,
+          code_challenge: codeChallenge,
+          code_challenge_method: 'S256',
+          response_mode: responseMode,
+          acr_values: 'Push_Only',
+          login_hint_token: loginHintToken,
+          nonce: this._configs?.token,
+        },
+      });
       if (responseAuth) {
         return responseAuth.data;
       }

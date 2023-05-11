@@ -1,4 +1,4 @@
-import AESCryptoStore from './aes-crypto';
+import CryptoStore from './crypto';
 import SInfo from 'react-native-sensitive-info';
 import base64 from 'react-native-base64';
 import { StepUpService } from './stepup-service';
@@ -45,8 +45,8 @@ class StepUpUtils {
     try {
       const dataEncrypted = await SInfo.getItem(PIN_TOKEN, sensitiveInfoOptions);
       const salt = await this.getSalt();
-      const key = await AESCryptoStore.generateKey(pinNumber, salt, cost, keySize); //cost = 10000
-      const loginHintToken = await AESCryptoStore.decryptData(JSON.parse(dataEncrypted), key);
+      const key = await CryptoStore.generateKey(pinNumber, salt, cost, keySize); //cost = 10000
+      const loginHintToken = await CryptoStore.decryptData(JSON.parse(dataEncrypted), key);
 
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
     } catch (error) {

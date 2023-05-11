@@ -28,10 +28,8 @@ import StepUpUtils from './service/utils';
 import { StepUpContext } from './context/stepup-context';
 
 export type StepUpScreenParams = {
-  onFailedVerified: () => void;
-  onSuccessVerified: () => void;
-  onError: (err: Error) => void;
-  onRequest: () => Promise<void>;
+  onFailedVerified?: () => void;
+  onSuccessVerified?: () => void;
 };
 
 export const PASSWORD_LOCKED_OUT = 'PASSWORD_LOCKED_OUT';
@@ -41,14 +39,13 @@ export default function StepUpComponent({ navigation, route }: any) {
   const otpRef = useRef<OTPFieldRef>();
   const [value, setValue] = useState<string>('');
   const { i18n } = useContext(ThemeContext);
-  const { obtainNewAccessToken } = useContext(StepUpContext);
+  const { obtainNewAccessToken, saveResumeURL, resumeURL } = useContext(StepUpContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
   const [isNotMatched, setIsNotMatched] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
   const { PingOnesdkModule } = NativeModules;
-  const [errorModal, setErrorModal] = useState(false);
-  const { onFailedVerified, onSuccessVerified, onError, onRequest } = route.params;
+  const { onFailedVerified, onSuccessVerified } = route.params;
   const marginKeyboard = keyboardHeight
     ? keyboardHeight - 20
     : Platform.OS === 'ios'
@@ -123,30 +120,14 @@ export default function StepUpComponent({ navigation, route }: any) {
     const authorizeResponse = await StepUpUtils.validatePin(value);
     if (!authorizeResponse) {
       setIsLoading(false);
-      if (retryCount + 1 < 3) {
-        setIsNotMatched(true);
-        setRetryCount(retryCount + 1);
-        otpRef.current?.clearInput();
-        otpRef.current?.focus();
-      } else {
-        onFailedVerified();
-      }
+      setIsNotMatched(true);
     } else {
       if (authorizeResponse?.status === 'FAILED') {
-        setIsLoading(false);
-        setIsNotMatched(false);
-        setRetryCount(0);
-        if (authorizeResponse.error?.code === PASSWORD_LOCKED_OUT) {
-          setErrorModal(true);
-          return;
-        }
-        else {
-          onError && onError(authorizeResponse.error);
-        } 
+        onFailedVerified(authorizeResponse.error);
       } else if (authorizeResponse.authSession && authorizeResponse?.resumeUrl) {
+        console.log('authorizeResponse.authSession.id', authorizeResponse.authSession.id);
+        saveResumeURL(authorizeResponse.resumeUrl);
         PingOnesdkModule.setCurrentSessionId(authorizeResponse.authSession.id);
-        // saveResumeURL(authorizeResponse?.resumeUrl);
-        onSuccessVerified();
       }
     }
   };
@@ -160,6 +141,7 @@ export default function StepUpComponent({ navigation, route }: any) {
         const isSuccess = await obtainNewAccessToken();
         console.log('obtainNewAccessToken -> isSuccess', isSuccess);
         if (isSuccess) {
+          onSuccessVerified();
         } else {
         }
       } else {
@@ -170,7 +152,7 @@ export default function StepUpComponent({ navigation, route }: any) {
       pingPushListener.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [resumeURL]);
 
   const onGoBack = () => {
     navigation.goBack();
@@ -205,9 +187,7 @@ export default function StepUpComponent({ navigation, route }: any) {
             <View style={styles.errorWrapper}>
               <View style={styles.rowCenter}>
                 <TriangelDangerIcon size={20} />
-                <Text style={styles.errorText}>{`PIN is incorrect. You have ${
-                  3 - retryCount
-                } remaining attempts.`}</Text>
+                <Text style={styles.errorText}>{`PIN is incorrect`}</Text>
               </View>
             </View>
           )}
@@ -220,28 +200,6 @@ export default function StepUpComponent({ navigation, route }: any) {
             isLoading={isLoading}
           />
         </View>
-        <BottomSheetModal isVisible={errorModal}>
-          <View style={styles.cameraDisableContainer}>
-            <AlertCircleIcon size={72} />
-            <View style={styles.gap40} />
-            <Text style={[styles.loginTitle, { textAlign: 'center' }]}>
-              {i18n.t('login_component.lbl_account_locked') ??
-                `Oops! Your account is temporarily locked`}
-            </Text>
-            <View style={styles.gap8} />
-            <Text style={[styles.subTitle, { textAlign: 'center' }]}>
-              {i18n.t('login_component.lbl_entered_wrong_password') ??
-                `You’ve entered the wrong credentials too many times. Please try again after 1 hour.`}
-            </Text>
-            <View style={{ height: 32 }} />
-            <ADBButton
-              label={i18n.t('login_component.btn_done') ?? 'Done'}
-              onPress={() => {
-                setErrorModal(false);
-              }}
-            />
-          </View>
-        </BottomSheetModal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
