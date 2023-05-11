@@ -1,4 +1,4 @@
 export { StepUpService } from './src/service/stepup-service';
 export { StepUpContext } from './src/context/stepup-context';
 export { default as StepUpProvider } from './src/context/stepup-provider';
-export { default as StepUpMainStack } from './src/index';
+export { default as StepUpMainScreen, StepUpScreenParams } from './src/index';

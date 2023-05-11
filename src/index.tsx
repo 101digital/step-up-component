@@ -1,7 +1,9 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
+  NativeEventEmitter,
   NativeModules,
   Platform,
   SafeAreaView,
@@ -15,39 +17,38 @@ import {
   ADBButton,
   OTPField,
   TriangelDangerIcon,
-  ImageIcon,
   ThemeContext,
   AlertCircleIcon,
 } from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
-import {
-  authComponentStore,
-  AuthContext,
-  VerificationMethod,
-} from 'react-native-auth-component';
 import SInfo from 'react-native-sensitive-info';
 import BottomSheetModal from 'react-native-theme-component/src/bottom-sheet';
-import { useTheme } from '@react-navigation/native';
 import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
+import StepUpUtils from './service/utils';
+import { StepUpContext } from './context/stepup-context';
 
-type StepUpComponentProps = {
+export type StepUpScreenParams = {
   onFailedVerified: () => void;
   onSuccessVerified: () => void;
   onError: (err: Error) => void;
-  onBack: () => void;
+  onRequest: () => Promise<void>;
 };
 
-export default function StepUpComponent(props: StepUpComponentProps) {
+export const PASSWORD_LOCKED_OUT = 'PASSWORD_LOCKED_OUT';
+export const BIOMETRIC_CHANGE = 'BIOMETRIC_CHANGE';
+
+export default function StepUpComponent({ navigation, route }: any) {
   const otpRef = useRef<OTPFieldRef>();
   const [value, setValue] = useState<string>('');
   const { i18n } = useContext(ThemeContext);
+  const { obtainNewAccessToken } = useContext(StepUpContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
   const [isNotMatched, setIsNotMatched] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
   const { PingOnesdkModule } = NativeModules;
   const [errorModal, setErrorModal] = useState(false);
-  const { onFailedVerified, onSuccessVerified, onError, onBack } = props;
+  const { onFailedVerified, onSuccessVerified, onError, onRequest } = route.params;
   const marginKeyboard = keyboardHeight
     ? keyboardHeight - 20
     : Platform.OS === 'ios'
@@ -55,13 +56,13 @@ export default function StepUpComponent(props: StepUpComponentProps) {
     : 20;
 
   const verifyBiometric = async () => {
-    const isEnabled = await authComponentStore.getIsEnableBiometric();
+    const isEnabled = await StepUpUtils.getIsEnableBiometric();
     if (isEnabled && JSON.parse(isEnabled)) {
       try {
         const hasAnySensors = await SInfo.isSensorAvailable();
         if (hasAnySensors) {
           const authorizeResponse =
-            await authComponentStore.validateBiometric();
+            await StepUpUtils.validateBiometric();
 
           if (authorizeResponse) {
             if (
@@ -76,10 +77,10 @@ export default function StepUpComponent(props: StepUpComponentProps) {
               authorizeResponse.error &&
               authorizeResponse.error.code
             ) {
-              if (authorizeResponse.error.code === 'PASSWORD_LOCKED_OUT') {
-                console.log('PASSWORD_LOCKED_OUT');
-              } else if (authorizeResponse.error.code === 'BIOMETRIC_CHANGE') {
-                console.log('BIOMETRIC_CHANGE');
+              if (authorizeResponse.error.code === PASSWORD_LOCKED_OUT) {
+                console.log(PASSWORD_LOCKED_OUT);
+              } else if (authorizeResponse.error.code === BIOMETRIC_CHANGE) {
+                console.log(BIOMETRIC_CHANGE);
               }
             } else {
               console.log('on error 1');
@@ -119,45 +120,68 @@ export default function StepUpComponent(props: StepUpComponentProps) {
 
   const validatePINNumber = async () => {
     setIsLoading(true);
-    // const authorizeResponse = await authComponentStore.validatePin(value);
-    // if (!authorizeResponse) {
-    //   setIsLoading(false);
-    //   if (retryCount + 1 < 3) {
-    //     setIsNotMatched(true);
-    //     setRetryCount(retryCount + 1);
-    //     otpRef.current?.clearInput();
-    //     otpRef.current?.focus();
-    //   } else {
-    //     onFailedVerified();
-    //   }
-    // } else {
-    //   if (authorizeResponse?.status === 'FAILED') {
-    //     setIsLoading(false);
-    //     authComponentStore.storeIsUserLogged(false);
-    //     setIsNotMatched(false);
-    //     setRetryCount(0);
-    //   } else if (authorizeResponse.authSession && authorizeResponse?.resumeUrl) {
-    // const deviceId = await authComponentStore.getDeviceId();
-    // const selectedDeviceId = authorizeResponse.selectedDevice?.id;
-
-    // if (deviceId !== selectedDeviceId) {
-    //   setIsSignedIn(false);
-    //   authComponentStore.storeIsUserLogged(false);
-    // } else {
-    // PingOnesdkModule.setCurrentSessionId(authorizeResponse.authSession.id);
-    // saveResumeURL(authorizeResponse?.resumeUrl);
-    // onSuccessVerified();
-    // }
-    // }
-    // }
+    const authorizeResponse = await StepUpUtils.validatePin(value);
+    if (!authorizeResponse) {
+      setIsLoading(false);
+      if (retryCount + 1 < 3) {
+        setIsNotMatched(true);
+        setRetryCount(retryCount + 1);
+        otpRef.current?.clearInput();
+        otpRef.current?.focus();
+      } else {
+        onFailedVerified();
+      }
+    } else {
+      if (authorizeResponse?.status === 'FAILED') {
+        setIsLoading(false);
+        setIsNotMatched(false);
+        setRetryCount(0);
+        if (authorizeResponse.error?.code === PASSWORD_LOCKED_OUT) {
+          setErrorModal(true);
+          return;
+        }
+        else {
+          onError && onError(authorizeResponse.error);
+        } 
+      } else if (authorizeResponse.authSession && authorizeResponse?.resumeUrl) {
+        PingOnesdkModule.setCurrentSessionId(authorizeResponse.authSession.id);
+        // saveResumeURL(authorizeResponse?.resumeUrl);
+        onSuccessVerified();
+      }
+    }
   };
 
+
+  useEffect(() => {
+    const eventEmitter = new NativeEventEmitter(NativeModules.PingOnesdkModule);
+    const pingPushListener = eventEmitter.addListener('ping_push_event', async (event) => {
+      Alert.alert('Ping Push Auth:', event?.push_approved ? 'Approved' : 'Denied/Failed');
+      if (event?.push_approved) {
+        const isSuccess = await obtainNewAccessToken();
+        console.log('obtainNewAccessToken -> isSuccess', isSuccess);
+        if (isSuccess) {
+        } else {
+        }
+      } else {
+      }
+    });
+
+    return () => {
+      pingPushListener.remove();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onGoBack = () => {
+    navigation.goBack();
+  }
+  
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView style={styles.container}>
         <View style={styles.header}>
           <View style={styles.navigationSection}>
-            <TouchableOpacity onPress={onBack}>
+            <TouchableOpacity onPress={onGoBack}>
               <GoBackArrowIcon size={20} />
             </TouchableOpacity>
           </View>

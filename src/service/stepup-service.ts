@@ -1,15 +1,19 @@
 
-import { AxiosInstance } from 'axios';
+import axios, { AxiosInstance} from 'axios';
+import qs from 'qs';
 import pkceChallenge from 'react-native-pkce-challenge';
+import { AuthServices } from 'react-native-auth-component';
 
 export type StepUpComponentConfig = {
-  authorizeClient: AxiosInstance;
   nonce: string;
   clientId: string;
   scope: string;
   responseType: string;
   responseMode: string;
-  acr_values: string;
+  acrValues: string;
+  identityPingUrl: string;
+  authBaseUrl: string;
+  authGrantType: string;
 };
 
 type PKCE = {
@@ -21,15 +25,10 @@ export class StepUpService {
   private static _instance: StepUpService = new StepUpService();
   private _configs?: StepUpComponentConfig;
   private _pkce: PKCE = pkceChallenge();
-  private _accessToken: string = '';
 
 
   public configure(configs: StepUpComponentConfig) {
     this._configs = configs;
-  }
-
-  public setAccessToken(acessToken: string) {
-    this._accessToken = acessToken;
   }
 
   private refreshPKCEChallenge() {
@@ -50,32 +49,47 @@ export class StepUpService {
     return StepUpService._instance;
   }
 
+  public resumeUrl = async (url: string) => {
+    const response = await axios.get(url);
+    return response.data;
+  };
 
-  public authorizePushOnly = async (
-    loginHintToken: string,
-    clientIdInit?: string,
-    scope?: string
-  ) => {
-    const { clientId, responseType, responseMode } = this._configs || {};
+  public obtainTokenSingleFactor = async (authorizeCode: string, scope?: string) => {
+    const { clientId, authBaseUrl, authGrantType } = this._configs || {};
+    const { codeVerifier } = this._pkce;
+    const body = qs.stringify({
+      grant_type: authGrantType,
+      code: authorizeCode,
+      scope: 'openid  profilep',
+      code_verifier: codeVerifier,
+      client_id: clientId,
+    });
+
+    const response = await axios.post(`${authBaseUrl}/as/token`, body);
+    const access_token = response.data.access_token;
+    AuthServices.instance().storeAccessToken(access_token);
+  };
+
+  public authorizePushOnly = async (loginHintToken: string) => {
+    const { clientId, responseType, responseMode, authBaseUrl, scope } = this._configs || {};
     try {
       const { codeChallenge } = this.refreshPKCEChallenge();
-      // const responseAuth = await AuthApiClient.instance()
-      //   .getAuthApiClient()
-      //   .get('as/authorize', {
-      //     params: {
-      //       response_type: responseType,
-      //       client_id: clientIdInit ? clientIdInit : clientId,
-      //       scope: scope ? scope : 'openid profilep',
-      //       code_challenge: codeChallenge,
-      //       code_challenge_method: 'S256',
-      //       response_mode: responseMode,
-      //       acr_values: 'Push_Only',
-      //       login_hint_token: loginHintToken,
-      //     },
-      //   });
-      // if (responseAuth) {
-      //   return responseAuth.data;
-      // }
+      const responseAuth = await axios.get(`${authBaseUrl}/as/authorize`,{
+          params: {
+            response_type: responseType,
+            client_id: clientId,
+            scope: scope,
+            code_challenge: codeChallenge,
+            code_challenge_method: 'S256',
+            response_mode: responseMode,
+            acr_values: 'Push_Only',
+            login_hint_token: loginHintToken,
+            nonce: 'SHA256'
+          },
+        });
+      if (responseAuth) {
+        return responseAuth.data;
+      }
     } catch (error) {
       return false;
     }
