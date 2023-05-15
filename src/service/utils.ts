@@ -5,9 +5,9 @@ import { StepUpService } from './stepup-service';
 import { generateSecureRandom } from 'react-native-securerandom';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const IS_ENABLE_BIOMETRIC = 'authcomponent.enableBio';
 const PIN_TOKEN = 'authcomponent.pinToken';
 const BIO_TOKEN = 'authcomponent.biometricToken';
-const IS_ENABLE_BIOMETRIC = 'authcomponent.enableBio';
 
 const keySize = 256;
 const cost = 10000;
@@ -42,12 +42,16 @@ class StepUpUtils {
   };
 
   validatePin = async (pinNumber: string) => {
+    console.log('validatePin -> pinNumber', pinNumber)
     try {
       const dataEncrypted = await SInfo.getItem(PIN_TOKEN, sensitiveInfoOptions);
+      console.log('validatePin -> dataEncrypted', dataEncrypted);
       const salt = await this.getSalt();
       const key = await CryptoStore.generateKey(pinNumber, salt, cost, keySize); //cost = 10000
+      console.log('validatePin -> dataEncrypted2', dataEncrypted);
       const loginHintToken = await CryptoStore.decryptData(JSON.parse(dataEncrypted), key);
 
+      console.log('validatePin -> loginHintToken', loginHintToken);
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
     } catch (error) {
       return error?.response?.data;

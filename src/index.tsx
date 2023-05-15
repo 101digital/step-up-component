@@ -19,6 +19,7 @@ import {
   TriangelDangerIcon,
   ThemeContext,
   AlertCircleIcon,
+  PinNumberComponent,
 } from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
@@ -37,13 +38,11 @@ export const BIOMETRIC_CHANGE = 'BIOMETRIC_CHANGE';
 
 export default function StepUpComponent({ navigation, route }: any) {
   const otpRef = useRef<OTPFieldRef>();
-  const [value, setValue] = useState<string>('');
-  const { i18n } = useContext(ThemeContext);
-  const { obtainNewAccessToken, saveResumeURL, resumeURL } = useContext(StepUpContext);
+  const { obtainNewAccessToken, saveResumeURL, resumeURL } =
+    useContext(StepUpContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
   const [isNotMatched, setIsNotMatched] = useState<boolean>(false);
-  const [retryCount, setRetryCount] = useState<number>(0);
   const { PingOnesdkModule } = NativeModules;
   const { onFailedVerified, onSuccessVerified } = route.params;
   const marginKeyboard = keyboardHeight
@@ -58,8 +57,7 @@ export default function StepUpComponent({ navigation, route }: any) {
       try {
         const hasAnySensors = await SInfo.isSensorAvailable();
         if (hasAnySensors) {
-          const authorizeResponse =
-            await StepUpUtils.validateBiometric();
+          const authorizeResponse = await StepUpUtils.validateBiometric();
 
           if (authorizeResponse) {
             if (
@@ -115,38 +113,51 @@ export default function StepUpComponent({ navigation, route }: any) {
     };
   }, []);
 
-  const validatePINNumber = async () => {
+  const validatePINNumber = async (otpNumber) => {
     setIsLoading(true);
-    const authorizeResponse = await StepUpUtils.validatePin(value);
+    const authorizeResponse = await StepUpUtils.validatePin(otpNumber);
+    console.log('validatePINNumber -> authorizeResponse', authorizeResponse);
     if (!authorizeResponse) {
       setIsLoading(false);
       setIsNotMatched(true);
     } else {
       if (authorizeResponse?.status === 'FAILED') {
         onFailedVerified(authorizeResponse.error);
-      } else if (authorizeResponse.authSession && authorizeResponse?.resumeUrl) {
-        console.log('authorizeResponse.authSession.id', authorizeResponse.authSession.id);
+      } else if (
+        authorizeResponse.authSession &&
+        authorizeResponse?.resumeUrl
+      ) {
+        console.log(
+          'authorizeResponse.authSession.id',
+          authorizeResponse.authSession.id
+        );
         saveResumeURL(authorizeResponse.resumeUrl);
         PingOnesdkModule.setCurrentSessionId(authorizeResponse.authSession.id);
       }
     }
   };
 
-
   useEffect(() => {
     const eventEmitter = new NativeEventEmitter(NativeModules.PingOnesdkModule);
-    const pingPushListener = eventEmitter.addListener('ping_push_event', async (event) => {
-      Alert.alert('Ping Push Auth:', event?.push_approved ? 'Approved' : 'Denied/Failed');
-      if (event?.push_approved) {
-        const isSuccess = await obtainNewAccessToken();
-        console.log('obtainNewAccessToken -> isSuccess', isSuccess);
-        if (isSuccess) {
-          onSuccessVerified();
+    const pingPushListener = eventEmitter.addListener(
+      'ping_push_event',
+      async (event) => {
+        Alert.alert(
+          'Ping Push Auth:',
+          event?.push_approved ? 'Approved' : 'Denied/Failed'
+        );
+        if (event?.push_approved) {
+          const isSuccess = await obtainNewAccessToken();
+          console.log('obtainNewAccessToken -> isSuccess', isSuccess);
+          if (isSuccess) {
+            onSuccessVerified();
+            navigation.goBack();
+          } else {
+          }
         } else {
         }
-      } else {
       }
-    });
+    );
 
     return () => {
       pingPushListener.remove();
@@ -156,8 +167,8 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   const onGoBack = () => {
     navigation.goBack();
-  }
-  
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView style={styles.container}>
@@ -172,7 +183,16 @@ export default function StepUpComponent({ navigation, route }: any) {
             {'Enter your 6-digit PIN to continue.'}
           </Text>
         </View>
-        <View style={styles.content}>
+        <PinNumberComponent
+          key={'PinInput'}
+          ref={otpRef}
+          onPressNext={validatePINNumber}
+          isBiometricEnable={false}
+          showError={isNotMatched}
+          errorMessage={'PIN is incorrect'}
+          isProcessing={isLoading}
+        />
+        {/* <View style={styles.content}>
           <OTPField
             ref={otpRef}
             cellCount={6}
@@ -191,15 +211,15 @@ export default function StepUpComponent({ navigation, route }: any) {
               </View>
             </View>
           )}
-        </View>
-        <View style={[styles.actions, { marginBottom: marginKeyboard }]}>
+        </View> */}
+        {/* <View style={[styles.actions, { marginBottom: marginKeyboard }]}>
           <ADBButton
             label={'Continue'}
             disabled={value.length < 6}
             onPress={validatePINNumber}
             isLoading={isLoading}
           />
-        </View>
+        </View> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
