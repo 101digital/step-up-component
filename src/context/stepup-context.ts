@@ -47,6 +47,7 @@ export function useStepUpContextValue(): StepUpContextData {
       flow: StepUpFlow,
       refId = '18181-98425-11636-67763'
     ) => {
+      console.log('generateNotificationStepUp -> context', flow);
       let data: NotificationData = {
         type: "STEPUP"
       };
@@ -64,6 +65,22 @@ export function useStepUpContextValue(): StepUpContextData {
           data = {
             ...data,
             flowId: StepUpFlow.CARD_PIN,
+            referenceId: refId,
+            screen: ""
+          }
+          break;
+        case StepUpFlow.CARD_LOCK:
+          data = {
+            ...data,
+            flowId: StepUpFlow.CARD_LOCK,
+            referenceId: refId,
+            screen: ""
+          }
+          break;
+        case StepUpFlow.CARD_UNLOCK:
+          data = {
+            ...data,
+            flowId: StepUpFlow.CARD_UNLOCK,
             referenceId: refId,
             screen: ""
           }

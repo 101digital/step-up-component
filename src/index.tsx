@@ -150,8 +150,10 @@ export default function StepUpComponent({ navigation, route }: any) {
           const isSuccess = await obtainNewAccessToken();
           console.log('obtainNewAccessToken -> isSuccess', isSuccess);
           if (isSuccess) {
-            onSuccessVerified();
             navigation.goBack();
+            setTimeout(() => {
+              onSuccessVerified();
+            }, 500);
           } else {
           }
         } else {
