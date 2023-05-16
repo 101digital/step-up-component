@@ -1,8 +1,9 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import qs from 'qs';
 import pkceChallenge from 'react-native-pkce-challenge';
 import { AuthServices } from 'react-native-auth-component';
 import CryptoStore from './crypto';
+import { NotificationData } from '../types';
 
 export type StepUpComponentConfig = {
   nonce: string;
@@ -14,7 +15,8 @@ export type StepUpComponentConfig = {
   identityPingUrl: string;
   authBaseUrl: string;
   authGrantType: string;
-  token: string;
+  token?: string;
+  mfaClient: AxiosInstance;
 };
 
 type PKCE = {
@@ -37,11 +39,13 @@ export class StepUpService {
   }
 
   public async setToken(token: string) {
-    return CryptoStore.encryptData(token, '', 'SHA256').then((encryptedToken) => {
-      if(typeof encryptedToken === 'string' && this._configs) {
-        this._configs.token = encryptedToken;
+    return CryptoStore.encryptData(token, '', 'SHA256').then(
+      (encryptedToken) => {
+        if (typeof encryptedToken === 'string' && this._configs) {
+          this._configs.token = encryptedToken;
+        }
       }
-    })
+    );
   }
 
   constructor() {
@@ -104,6 +108,17 @@ export class StepUpService {
       }
     } catch (error) {
       return false;
+    }
+  };
+
+  public generateNotification = async (data: NotificationData) => {
+    console.log('generateNotification -> data', data);
+    const { mfaClient } = this._configs || {};
+    if (mfaClient) {
+      console.log('generateNotification2');
+      mfaClient.post('notifications', data);
+    } else {
+      throw 'mfa client not available';
     }
   };
 }

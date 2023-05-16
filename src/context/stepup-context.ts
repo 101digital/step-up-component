@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StepUpService } from '../service/stepup-service';
+import { NotificationData, StepUpFlow } from '../types';
 
 export interface StepUpContextData {
   authorize: () => Promise<boolean | undefined>;
@@ -7,13 +8,15 @@ export interface StepUpContextData {
   obtainNewAccessToken: () => Promise<boolean>;
   saveResumeURL: (url: string) => void;
   resumeURL?: string;
+  generateNotificationStepUp: (flow: StepUpFlow, refId?: string) => Promise<boolean | undefined>;
 }
 
 export const StepUpDefaultValue: StepUpContextData = {
   authorize: async () => undefined,
   isLoadingAuthorize: false,
   obtainNewAccessToken: async () => false,
-  saveResumeURL: () => false
+  saveResumeURL: () => false,
+  generateNotificationStepUp: async () => undefined,
 };
 
 
@@ -39,6 +42,45 @@ export function useStepUpContextValue(): StepUpContextData {
     []
   );
 
+  const generateNotificationStepUp = useCallback(
+    async (
+      flow: StepUpFlow,
+      refId = '18181-98425-11636-67763'
+    ) => {
+      let data: NotificationData = {
+        type: "STEPUP"
+      };
+
+      switch(flow) {
+        case StepUpFlow.CARD_PCI_DATA:
+          data = {
+            ...data,
+            flowId: StepUpFlow.CARD_PCI_DATA,
+            referenceId: refId,
+            screen: ""
+          }
+          break;
+        case StepUpFlow.CARD_PIN:
+          data = {
+            ...data,
+            flowId: StepUpFlow.CARD_PIN,
+            referenceId: refId,
+            screen: ""
+          }
+          break;
+        
+      }
+
+
+      try {
+        await StepUpServiceInstance.generateNotification(data);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    },
+    []
+  );
 
   const obtainNewAccessToken = useCallback(async () => {
     try {
@@ -64,6 +106,7 @@ export function useStepUpContextValue(): StepUpContextData {
     isLoadingAuthorize: _isLoadingAuthorize,
     obtainNewAccessToken,
     saveResumeURL,
-    resumeURL: _resumeURL
+    resumeURL: _resumeURL,
+    generateNotificationStepUp
   }), [_isLoadingAuthorize, _resumeURL]);
 }
