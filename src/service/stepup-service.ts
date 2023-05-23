@@ -15,7 +15,7 @@ export type StepUpComponentConfig = {
   identityPingUrl: string;
   authBaseUrl: string;
   authGrantType: string;
-  token?: string;
+  encryptedJWT?: string;
   mfaClient: AxiosInstance;
 };
 
@@ -39,10 +39,11 @@ export class StepUpService {
   }
 
   public async setToken(token: string) {
+    AuthServices.instance().storeJWTPushNotification(token);
     return CryptoStore.encryptData(token, '', 'SHA256').then(
       (encryptedToken) => {
         if (typeof encryptedToken === 'string' && this._configs) {
-          this._configs.token = encryptedToken;
+          this._configs.encryptedJWT = encryptedToken;
         }
       }
     );
@@ -68,21 +69,22 @@ export class StepUpService {
 
   public obtainTokenSingleFactor = async (
     authorizeCode: string,
-    scope?: string
   ) => {
-    const { clientId, authBaseUrl, authGrantType } = this._configs || {};
+    const { clientId, authBaseUrl, authGrantType, scope } = this._configs || {};
     const { codeVerifier } = this._pkce;
     const body = qs.stringify({
       grant_type: authGrantType,
       code: authorizeCode,
-      scope: 'openid  profilep',
+      scope: scope,
       code_verifier: codeVerifier,
       client_id: clientId,
     });
 
     const response = await axios.post(`${authBaseUrl}/as/token`, body);
     const access_token = response.data.access_token;
+    const id_token = response.data.id_token;
     AuthServices.instance().storeAccessToken(access_token);
+    AuthServices.instance().storeIdToken(id_token);
   };
 
   public authorizePushOnly = async (loginHintToken: string) => {
@@ -100,7 +102,7 @@ export class StepUpService {
           response_mode: responseMode,
           acr_values: 'Push_Only',
           login_hint_token: loginHintToken,
-          nonce: this._configs?.token,
+          nonce: this._configs?.encryptedJWT,
         },
       });
       if (responseAuth) {

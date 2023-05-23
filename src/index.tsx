@@ -113,7 +113,7 @@ export default function StepUpComponent({ navigation, route }: any) {
     };
   }, []);
 
-  const validatePINNumber = async (otpNumber) => {
+  const validatePINNumber = async (otpNumber: string) => {
     setIsLoading(true);
     const authorizeResponse = await StepUpUtils.validatePin(otpNumber);
     console.log('validatePINNumber -> authorizeResponse', authorizeResponse);
@@ -122,6 +122,7 @@ export default function StepUpComponent({ navigation, route }: any) {
       setIsNotMatched(true);
     } else {
       if (authorizeResponse?.status === 'FAILED') {
+        setIsLoading(false);
         onFailedVerified(authorizeResponse.error);
       } else if (
         authorizeResponse.authSession &&

@@ -8,7 +8,7 @@ export interface StepUpContextData {
   obtainNewAccessToken: () => Promise<boolean>;
   saveResumeURL: (url: string) => void;
   resumeURL?: string;
-  generateNotificationStepUp: (flow: StepUpFlow, refId?: string) => Promise<boolean | undefined>;
+  generateNotificationStepUp: (flow: StepUpFlow, refId?: string, contextData?: object) => Promise<boolean | undefined>;
 }
 
 export const StepUpDefaultValue: StepUpContextData = {
@@ -45,11 +45,15 @@ export function useStepUpContextValue(): StepUpContextData {
   const generateNotificationStepUp = useCallback(
     async (
       flow: StepUpFlow,
-      refId = '18181-98425-11636-67763'
+      refId = '18181-98425-11636-67763',
+      contextData
     ) => {
       console.log('generateNotificationStepUp -> context', flow);
       let data: NotificationData = {
-        type: "STEPUP"
+        type: "STEPUP",
+        referenceId: refId,
+        screen: "",
+        contextData: contextData
       };
 
       switch(flow) {
@@ -57,32 +61,30 @@ export function useStepUpContextValue(): StepUpContextData {
           data = {
             ...data,
             flowId: StepUpFlow.CARD_PCI_DATA,
-            referenceId: refId,
-            screen: ""
           }
           break;
         case StepUpFlow.CARD_PIN:
           data = {
             ...data,
             flowId: StepUpFlow.CARD_PIN,
-            referenceId: refId,
-            screen: ""
           }
           break;
         case StepUpFlow.CARD_LOCK:
           data = {
             ...data,
             flowId: StepUpFlow.CARD_LOCK,
-            referenceId: refId,
-            screen: ""
           }
           break;
         case StepUpFlow.CARD_UNLOCK:
           data = {
             ...data,
             flowId: StepUpFlow.CARD_UNLOCK,
-            referenceId: refId,
-            screen: ""
+          }
+          break;
+        case StepUpFlow.CARD_LIMIT:
+          data = {
+            ...data,
+            flowId: StepUpFlow.CARD_LIMIT,
           }
           break;
         

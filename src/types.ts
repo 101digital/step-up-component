@@ -21,4 +21,5 @@ export type NotificationData = {
     referenceId?: string;
     type: string;
     screen?: string;
+    contextData?: object;
 }
