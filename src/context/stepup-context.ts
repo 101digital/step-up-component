@@ -57,6 +57,12 @@ export function useStepUpContextValue(): StepUpContextData {
       };
 
       switch(flow) {
+        case StepUpFlow.CARD_ISSUANCE:
+          data = {
+            ...data,
+            flowId: StepUpFlow.CARD_ISSUANCE,
+          }
+          break;
         case StepUpFlow.CARD_PCI_DATA:
           data = {
             ...data,
@@ -85,6 +91,12 @@ export function useStepUpContextValue(): StepUpContextData {
           data = {
             ...data,
             flowId: StepUpFlow.CARD_LIMIT,
+          }
+          break;
+        case StepUpFlow.S3D_AUTH:
+          data = {
+            ...data,
+            flowId: StepUpFlow.S3D_AUTH,
           }
           break;
         

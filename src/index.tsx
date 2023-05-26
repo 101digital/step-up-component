@@ -25,8 +25,8 @@ import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
 import BottomSheetModal from 'react-native-theme-component/src/bottom-sheet';
 import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
-import StepUpUtils from './service/utils';
 import { StepUpContext } from './context/stepup-context';
+import { authComponentStore } from 'react-native-auth-component';
 
 export type StepUpScreenParams = {
   onFailedVerified?: () => void;
@@ -52,12 +52,12 @@ export default function StepUpComponent({ navigation, route }: any) {
     : 20;
 
   const verifyBiometric = async () => {
-    const isEnabled = await StepUpUtils.getIsEnableBiometric();
+    const isEnabled = await authComponentStore.getIsEnableBiometric();
     if (isEnabled && JSON.parse(isEnabled)) {
       try {
         const hasAnySensors = await SInfo.isSensorAvailable();
         if (hasAnySensors) {
-          const authorizeResponse = await StepUpUtils.validateBiometric();
+          const authorizeResponse = await authComponentStore.validateBiometric();
 
           if (authorizeResponse) {
             if (
@@ -73,18 +73,19 @@ export default function StepUpComponent({ navigation, route }: any) {
               authorizeResponse.error.code
             ) {
               if (authorizeResponse.error.code === PASSWORD_LOCKED_OUT) {
-                console.log(PASSWORD_LOCKED_OUT);
+                onFailedVerified();
               } else if (authorizeResponse.error.code === BIOMETRIC_CHANGE) {
-                console.log(BIOMETRIC_CHANGE);
+                onFailedVerified();
               }
             } else {
-              console.log('on error 1');
+              onFailedVerified();
             }
             return;
           }
         }
       } catch (error) {
         console.log('on error 2');
+        onFailedVerified();
       }
     } else {
       otpRef.current?.focus();
@@ -115,8 +116,7 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   const validatePINNumber = async (otpNumber: string) => {
     setIsLoading(true);
-    const authorizeResponse = await StepUpUtils.validatePin(otpNumber);
-    console.log('validatePINNumber -> authorizeResponse', authorizeResponse);
+    const authorizeResponse = await authComponentStore.validatePin(otpNumber);
     if (!authorizeResponse) {
       setIsLoading(false);
       setIsNotMatched(true);
@@ -128,10 +128,6 @@ export default function StepUpComponent({ navigation, route }: any) {
         authorizeResponse.authSession &&
         authorizeResponse?.resumeUrl
       ) {
-        console.log(
-          'authorizeResponse.authSession.id',
-          authorizeResponse.authSession.id
-        );
         saveResumeURL(authorizeResponse.resumeUrl);
         PingOnesdkModule.setCurrentSessionId(authorizeResponse.authSession.id);
       }
@@ -149,12 +145,9 @@ export default function StepUpComponent({ navigation, route }: any) {
         );
         if (event?.push_approved) {
           const isSuccess = await obtainNewAccessToken();
-          console.log('obtainNewAccessToken -> isSuccess', isSuccess);
           if (isSuccess) {
             navigation.goBack();
-            setTimeout(() => {
-              onSuccessVerified();
-            }, 500);
+            onSuccessVerified();
           } else {
           }
         } else {
