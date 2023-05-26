@@ -7,7 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const IS_ENABLE_BIOMETRIC = 'authcomponent.enableBio';
 const PIN_TOKEN = 'authcomponent.pinToken';
-const BIO_TOKEN = 'authcomponent.biometricToken';
+const BIO_TOKEN = 'authcomponent.biometricToken.currentSet';
 
 const keySize = 256;
 const cost = 10000;
@@ -25,7 +25,6 @@ const biometricChangeErrorCode = {
 };
 
 class StepUpUtils {
-
   getIsEnableBiometric = () => AsyncStorage.getItem(IS_ENABLE_BIOMETRIC);
 
   getSalt = async () => {
@@ -42,16 +41,18 @@ class StepUpUtils {
   };
 
   validatePin = async (pinNumber: string) => {
-    console.log('validatePin -> pinNumber', pinNumber)
     try {
-      const dataEncrypted = await SInfo.getItem(PIN_TOKEN, sensitiveInfoOptions);
-      console.log('validatePin -> dataEncrypted', dataEncrypted);
+      const dataEncrypted = await SInfo.getItem(
+        PIN_TOKEN,
+        sensitiveInfoOptions
+      );
       const salt = await this.getSalt();
       const key = await CryptoStore.generateKey(pinNumber, salt, cost, keySize); //cost = 10000
-      console.log('validatePin -> dataEncrypted2', dataEncrypted);
-      const loginHintToken = await CryptoStore.decryptData(JSON.parse(dataEncrypted), key);
+      const loginHintToken = await CryptoStore.decryptData(
+        JSON.parse(dataEncrypted),
+        key
+      );
 
-      console.log('validatePin -> loginHintToken', loginHintToken);
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
     } catch (error) {
       return error?.response?.data;
@@ -69,7 +70,8 @@ class StepUpUtils {
           header:
             '{ADB} uses Finger Print ID to restrict unauthorized users from accessing the app.',
         },
-        kSecUseOperationPrompt: 'We need your permission to retrieve encrypted data',
+        kSecUseOperationPrompt:
+          'We need your permission to retrieve encrypted data',
       });
       if (!loginHintToken) {
         return biometricChangeErrorCode;

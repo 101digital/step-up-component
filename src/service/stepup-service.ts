@@ -67,9 +67,7 @@ export class StepUpService {
     return response.data;
   };
 
-  public obtainTokenSingleFactor = async (
-    authorizeCode: string,
-  ) => {
+  public obtainTokenSingleFactor = async (authorizeCode: string) => {
     const { clientId, authBaseUrl, authGrantType, scope } = this._configs || {};
     const { codeVerifier } = this._pkce;
     const body = qs.stringify({
@@ -118,7 +116,7 @@ export class StepUpService {
     const { mfaClient } = this._configs || {};
     if (mfaClient) {
       console.log('generateNotification2');
-      mfaClient.post('notifications', data);
+      await mfaClient.post('notifications', data);
     } else {
       throw 'mfa client not available';
     }

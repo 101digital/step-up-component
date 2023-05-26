@@ -1,11 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Keyboard,
   KeyboardAvoidingView,
   NativeEventEmitter,
   NativeModules,
-  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -13,24 +10,17 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from './assets';
-import {
-  ADBButton,
-  OTPField,
-  TriangelDangerIcon,
-  ThemeContext,
-  AlertCircleIcon,
-  PinNumberComponent,
-} from 'react-native-theme-component';
+import { PinNumberComponent } from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
-import BottomSheetModal from 'react-native-theme-component/src/bottom-sheet';
 import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
 import { StepUpContext } from './context/stepup-context';
-import { authComponentStore } from 'react-native-auth-component';
+import StepUpUtils from './service/utils';
 
 export type StepUpScreenParams = {
   onFailedVerified?: () => void;
   onSuccessVerified?: () => void;
+  onVerifying?: () => void;
 };
 
 export const PASSWORD_LOCKED_OUT = 'PASSWORD_LOCKED_OUT';
@@ -41,23 +31,18 @@ export default function StepUpComponent({ navigation, route }: any) {
   const { obtainNewAccessToken, saveResumeURL, resumeURL } =
     useContext(StepUpContext);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
   const [isNotMatched, setIsNotMatched] = useState<boolean>(false);
   const { PingOnesdkModule } = NativeModules;
-  const { onFailedVerified, onSuccessVerified } = route.params;
-  const marginKeyboard = keyboardHeight
-    ? keyboardHeight - 20
-    : Platform.OS === 'ios'
-    ? 0
-    : 20;
+  const { onFailedVerified, onSuccessVerified, onVerifying } = route.params;
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
 
   const verifyBiometric = async () => {
-    const isEnabled = await authComponentStore.getIsEnableBiometric();
+    const isEnabled = await StepUpUtils.getIsEnableBiometric();
     if (isEnabled && JSON.parse(isEnabled)) {
       try {
         const hasAnySensors = await SInfo.isSensorAvailable();
         if (hasAnySensors) {
-          const authorizeResponse = await authComponentStore.validateBiometric();
+          const authorizeResponse = await StepUpUtils.validateBiometric();
 
           if (authorizeResponse) {
             if (
@@ -84,7 +69,6 @@ export default function StepUpComponent({ navigation, route }: any) {
           }
         }
       } catch (error) {
-        console.log('on error 2');
         onFailedVerified();
       }
     } else {
@@ -92,34 +76,14 @@ export default function StepUpComponent({ navigation, route }: any) {
     }
   };
 
-  useEffect(() => {
-    verifyBiometric();
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      (e) => {
-        console.log('event', e);
-        setKeyboardHeight(e.endCoordinates.height);
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
-
   const validatePINNumber = async (otpNumber: string) => {
+    onVerifying();
     setIsLoading(true);
-    const authorizeResponse = await authComponentStore.validatePin(otpNumber);
+    const authorizeResponse = await StepUpUtils.validatePin(otpNumber);
     if (!authorizeResponse) {
       setIsLoading(false);
       setIsNotMatched(true);
+      onFailedVerified();
     } else {
       if (authorizeResponse?.status === 'FAILED') {
         setIsLoading(false);
@@ -139,10 +103,6 @@ export default function StepUpComponent({ navigation, route }: any) {
     const pingPushListener = eventEmitter.addListener(
       'ping_push_event',
       async (event) => {
-        Alert.alert(
-          'Ping Push Auth:',
-          event?.push_approved ? 'Approved' : 'Denied/Failed'
-        );
         if (event?.push_approved) {
           const isSuccess = await obtainNewAccessToken();
           if (isSuccess) {
@@ -165,6 +125,14 @@ export default function StepUpComponent({ navigation, route }: any) {
     navigation.goBack();
   };
 
+  useEffect(() => {
+    StepUpUtils.getIsEnableBiometric().then((isEnabled) => {
+      if (isEnabled && JSON.parse(isEnabled)) {
+        setIsBiometricEnabled(true);
+      }
+    });
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView style={styles.container}>
@@ -182,40 +150,13 @@ export default function StepUpComponent({ navigation, route }: any) {
         <PinNumberComponent
           key={'PinInput'}
           ref={otpRef}
-          onPressNext={validatePINNumber}
-          isBiometricEnable={false}
+          onValidateBiometric={verifyBiometric}
+          onValidatePin={validatePINNumber}
+          isBiometricEnable={isBiometricEnabled}
           showError={isNotMatched}
           errorMessage={'PIN is incorrect'}
-          isProcessing={isLoading}
+          isProcessing={onVerifying ? false : isLoading}
         />
-        {/* <View style={styles.content}>
-          <OTPField
-            ref={otpRef}
-            cellCount={6}
-            onChanged={setValue}
-            style={{
-              focusCellContainerStyle: { borderBottomColor: '#1EBCE8' },
-            }}
-            isUnMasked={false}
-          />
-
-          {isNotMatched && (
-            <View style={styles.errorWrapper}>
-              <View style={styles.rowCenter}>
-                <TriangelDangerIcon size={20} />
-                <Text style={styles.errorText}>{`PIN is incorrect`}</Text>
-              </View>
-            </View>
-          )}
-        </View> */}
-        {/* <View style={[styles.actions, { marginBottom: marginKeyboard }]}>
-          <ADBButton
-            label={'Continue'}
-            disabled={value.length < 6}
-            onPress={validatePINNumber}
-            isLoading={isLoading}
-          />
-        </View> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
