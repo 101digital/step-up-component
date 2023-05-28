@@ -104,8 +104,10 @@ export class StepUpService {
         },
       });
       if (responseAuth) {
+        console.log('hihihihi', responseAuth)
         return responseAuth.data;
       }
+      return true;
     } catch (error) {
       return false;
     }

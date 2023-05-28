@@ -42,16 +42,20 @@ class StepUpUtils {
 
   validatePin = async (pinNumber: string) => {
     try {
+      console.log('validatePin -> -1')
       const dataEncrypted = await SInfo.getItem(
         PIN_TOKEN,
         sensitiveInfoOptions
       );
+      console.log('validatePin -> 0')
       const salt = await this.getSalt();
       const key = await CryptoStore.generateKey(pinNumber, salt, cost, keySize); //cost = 10000
+      console.log('validatePin -> 1')
       const loginHintToken = await CryptoStore.decryptData(
         JSON.parse(dataEncrypted),
         key
       );
+      console.log('validatePin -> 2')
 
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
     } catch (error) {
@@ -78,7 +82,7 @@ class StepUpUtils {
       }
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
     } catch (error) {
-      if (error.message === 'Key permanently invalidated') {
+      if (error?.message === 'Key permanently invalidated') {
         return biometricChangeErrorCode;
       }
       return error?.response?.data;

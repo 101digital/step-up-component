@@ -7,7 +7,7 @@ export enum StepUpFlow {
     CARD_LOCK = 'card-lock',
     CARD_UNLOCK = 'card-unlock',
     CARD_LIMIT = 'card-limit',
-    S3D_AUTH = 's3d-auth',
+    S3D_AUTH = 's3d-authz',
     NAD_REGISTER = 'nad-register',
     NAD_TRANSFER = 'nad-transfer',
     NAD_DEACTIVATION = 'nad-deactivation',

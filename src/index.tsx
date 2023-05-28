@@ -45,11 +45,7 @@ export default function StepUpComponent({ navigation, route }: any) {
           const authorizeResponse = await StepUpUtils.validateBiometric();
 
           if (authorizeResponse) {
-            if (
-              authorizeResponse.resumeUrl &&
-              authorizeResponse.authSession &&
-              authorizeResponse.selectedDevice?.id
-            ) {
+            if (authorizeResponse.resumeUrl && authorizeResponse.authSession) {
               PingOnesdkModule.setCurrentSessionId(
                 authorizeResponse.authSession.id
               );
@@ -109,8 +105,12 @@ export default function StepUpComponent({ navigation, route }: any) {
             navigation.goBack();
             onSuccessVerified();
           } else {
+            navigation.goBack();
+            onFailedVerified();
           }
         } else {
+          navigation.goBack();
+          onFailedVerified();
         }
       }
     );

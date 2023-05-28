@@ -1,7 +1,7 @@
 {
   "name": "step-up-component",
   "private": true,
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "",
   "repository": {
     "url": "https://github.com/101digital/step-up-component.git"
@@ -29,6 +29,7 @@
     "react-native-gesture-handler": "2.9.0",
     "react-native-safe-area-context": "3.1.7",
     "@react-navigation/native": "5.7.3",
-    "@react-navigation/stack": "5.9.0"
+    "@react-navigation/stack": "5.9.0",
+    "react-native-sensitive-info": "6.0.0-alpha.9"
   }
 }
