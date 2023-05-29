@@ -99,9 +99,25 @@ export function useStepUpContextValue(): StepUpContextData {
             flowId: StepUpFlow.S3D_AUTH,
           }
           break;
-        
+        case StepUpFlow.NAD_MAINTENACE:
+          data = {
+            ...data,
+            flowId: StepUpFlow.NAD_MAINTENACE,
+          }
+          break;
+        case StepUpFlow.NAD_REGISTER:
+          data = {
+            ...data,
+            flowId: StepUpFlow.NAD_REGISTER,
+          }
+          break;
+        case StepUpFlow.QR_PAYMENT:
+          data = {
+            ...data,
+            flowId: StepUpFlow.QR_PAYMENT,
+          }
+          break;
       }
-
 
       try {
         await StepUpServiceInstance.generateNotification(data);
