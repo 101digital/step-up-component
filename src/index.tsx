@@ -51,28 +51,14 @@ export default function StepUpComponent({ navigation, route }: any) {
                 authorizeResponse.authSession.id
               );
               saveResumeURL(authorizeResponse.resumeUrl);
-            } else if (
-              authorizeResponse.error &&
-              authorizeResponse.error.code
-            ) {
-              if (authorizeResponse.error.code === PASSWORD_LOCKED_OUT) {
-                onFailedVerified();
-              } else if (authorizeResponse.error.code === BIOMETRIC_CHANGE) {
-                onFailedVerified();
-              }
-            } else {
-              onFailedVerified();
+              return;
             }
-            return;
           }
         }
+        onFailedVerified();
       } catch (error) {
         onFailedVerified();
-      } finally {
-        setIsLoading(false);
       }
-    } else {
-      otpRef.current?.focus();
     }
   };
 
