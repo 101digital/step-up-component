@@ -37,19 +37,20 @@ export default function StepUpComponent({ navigation, route }: any) {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
 
   const verifyBiometric = async () => {
-    PingOnesdkModule.setCurrentSessionId('');
-    const isEnabled = await StepUpUtils.getIsEnableBiometric();
-    if (isEnabled && JSON.parse(isEnabled)) {
+    if (isBiometricEnabled) {
+      onVerifying();
+      setIsLoading(true);
+      PingOnesdkModule.setCurrentSessionId('');
       try {
         const hasAnySensors = await SInfo.isSensorAvailable();
         if (hasAnySensors) {
           const authorizeResponse = await StepUpUtils.validateBiometric();
-
           if (authorizeResponse) {
             if (authorizeResponse.resumeUrl && authorizeResponse.authSession) {
               PingOnesdkModule.setCurrentSessionId(
                 authorizeResponse.authSession.id
               );
+              saveResumeURL(authorizeResponse.resumeUrl);
             } else if (
               authorizeResponse.error &&
               authorizeResponse.error.code
@@ -67,6 +68,8 @@ export default function StepUpComponent({ navigation, route }: any) {
         }
       } catch (error) {
         onFailedVerified();
+      } finally {
+        setIsLoading(false);
       }
     } else {
       otpRef.current?.focus();
