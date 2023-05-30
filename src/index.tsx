@@ -37,6 +37,7 @@ export default function StepUpComponent({ navigation, route }: any) {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
 
   const verifyBiometric = async () => {
+    PingOnesdkModule.setCurrentSessionId('');
     const isEnabled = await StepUpUtils.getIsEnableBiometric();
     if (isEnabled && JSON.parse(isEnabled)) {
       try {
@@ -73,6 +74,7 @@ export default function StepUpComponent({ navigation, route }: any) {
   };
 
   const validatePINNumber = async (otpNumber: string) => {
+    PingOnesdkModule.setCurrentSessionId('');
     onVerifying();
     setIsLoading(true);
     const authorizeResponse = await StepUpUtils.validatePin(otpNumber);
