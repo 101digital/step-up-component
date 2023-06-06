@@ -81,7 +81,7 @@ export class StepUpService {
     const response = await axios.post(`${authBaseUrl}/as/token`, body);
     const access_token = response.data.access_token;
     const id_token = response.data.id_token;
-    AuthServices.instance().storeAccessToken(access_token);
+    AuthServices.instance().storeOTT(access_token);
     AuthServices.instance().storeIdToken(id_token);
   };
 
@@ -104,7 +104,6 @@ export class StepUpService {
         },
       });
       if (responseAuth) {
-        console.log('hihihihi', responseAuth)
         return responseAuth.data;
       }
       return true;
@@ -114,10 +113,8 @@ export class StepUpService {
   };
 
   public generateNotification = async (data: NotificationData) => {
-    console.log('generateNotification -> data', data);
     const { mfaClient } = this._configs || {};
     if (mfaClient) {
-      console.log('generateNotification2');
       await mfaClient.post('notifications', data);
     } else {
       throw 'mfa client not available';
