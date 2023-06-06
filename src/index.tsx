@@ -38,7 +38,6 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   const verifyBiometric = async () => {
     if (isBiometricEnabled) {
-      onVerifying();
       setIsLoading(true);
       PingOnesdkModule.setCurrentSessionId('');
       try {
@@ -46,6 +45,7 @@ export default function StepUpComponent({ navigation, route }: any) {
         if (hasAnySensors) {
           const authorizeResponse = await StepUpUtils.validateBiometric();
           if (authorizeResponse) {
+            onVerifying();
             if (authorizeResponse.resumeUrl && authorizeResponse.authSession) {
               PingOnesdkModule.setCurrentSessionId(
                 authorizeResponse.authSession.id
@@ -64,7 +64,6 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   const validatePINNumber = async (otpNumber: string) => {
     PingOnesdkModule.setCurrentSessionId('');
-    onVerifying();
     setIsLoading(true);
     const authorizeResponse = await StepUpUtils.validatePin(otpNumber);
     if (!authorizeResponse) {
@@ -72,6 +71,7 @@ export default function StepUpComponent({ navigation, route }: any) {
       setIsNotMatched(true);
       onFailedVerified();
     } else {
+      onVerifying();
       if (authorizeResponse?.status === 'FAILED') {
         setIsLoading(false);
         onFailedVerified(authorizeResponse.error);
