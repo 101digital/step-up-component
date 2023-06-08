@@ -10,12 +10,12 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from './assets';
-import { PinNumberComponent } from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
 import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
 import { StepUpContext } from './context/stepup-context';
 import StepUpUtils from './service/utils';
+import PinNumberComponent from './components/pin-input-with-number-pad';
 
 export type StepUpScreenParams = {
   onFailedVerified?: () => void;
