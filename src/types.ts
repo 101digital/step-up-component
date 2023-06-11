@@ -13,7 +13,7 @@ export enum StepUpFlow {
     NAD_DEACTIVATION = 'nad-deactivation',
     NAD_ACTIVATION = 'nad-activation',
     NAD_DEREGISTRATION = 'nad-deregistration',
-    QR_PAYMENT = 'qr-payment',
+    QR_PAYMENT = 'payment-authorization',
     NAD_MAINTENACE = 'nad-maintenance'
 }
 
