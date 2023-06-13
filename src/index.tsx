@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   NativeEventEmitter,
   NativeModules,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -10,12 +12,13 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from './assets';
-import { PinNumberComponent } from 'react-native-theme-component';
+import { ADBAlertModal, AlertModal, PinNumberComponent } from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
 import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
 import { StepUpContext } from './context/stepup-context';
 import StepUpUtils from './service/utils';
+import { AuthContext, VerificationMethod } from 'react-native-auth-component';
 
 export type StepUpScreenParams = {
   onFailedVerified?: () => void;
@@ -35,6 +38,9 @@ export default function StepUpComponent({ navigation, route }: any) {
   const { PingOnesdkModule } = NativeModules;
   const { onFailedVerified, onSuccessVerified, onVerifying } = route.params;
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
+  const [validateAttempt, setValidateAttempt] = useState<number>(1);
+  const [isShowErrorPinPopup, setIsShowErrorPinPopup] = useState<boolean>(false);
+  const { setIsSignedIn } = useContext(AuthContext);
 
   const verifyBiometric = async () => {
     if (isBiometricEnabled) {
@@ -69,6 +75,8 @@ export default function StepUpComponent({ navigation, route }: any) {
     if (!authorizeResponse) {
       setIsLoading(false);
       setIsNotMatched(true);
+      setValidateAttempt(validateAttempt + 1);
+      otpRef.current?.clearInput();
       onFailedVerified();
     } else {
       onVerifying();
@@ -117,12 +125,44 @@ export default function StepUpComponent({ navigation, route }: any) {
   };
 
   useEffect(() => {
-    StepUpUtils.getIsEnableBiometric().then((isEnabled) => {
-      if (isEnabled && JSON.parse(isEnabled)) {
-        setIsBiometricEnabled(true);
-      }
-    });
+    checkDeviceBinding();
   }, []);
+  
+  const runSubsequentLoginFlow = async () => {
+    const isEnabled = await StepUpUtils.getIsEnableBiometric();
+    if (isEnabled && JSON.parse(isEnabled)) {
+      setIsBiometricEnabled(true);
+      await verifyBiometric();
+    }
+  };
+
+  const checkDeviceBinding = async () => {
+    PingOnesdkModule.setCurrentSessionId('');
+    const isDeviceBinded = await PingOnesdkModule.isDeviceBinded();
+    if (!isDeviceBinded || (Platform.OS === 'ios' && JSON.parse(isDeviceBinded) === false)) {
+      Alert.alert(
+        'Ping Binding Deleted',
+        'This device no longer binded with your account, perhaps this is fresh install or you used the connected account in another device recently or your account is hard rejected, if not then please raise a bug.'
+      );
+      setIsSignedIn(false);
+      return;
+    }
+    runSubsequentLoginFlow();
+  };
+
+  const onPressGoBack = () => {
+    setIsShowErrorPinPopup(false);
+    navigation.goBack();
+  }
+
+
+  useEffect(() => {
+    if(validateAttempt > 3) {
+      setIsShowErrorPinPopup(true);
+    }
+  }, [validateAttempt])
+
+  console.log('validateAttempt', validateAttempt);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -146,8 +186,15 @@ export default function StepUpComponent({ navigation, route }: any) {
           clearError={() => setIsNotMatched(false)}
           isBiometricEnable={isBiometricEnabled}
           showError={isNotMatched}
-          errorMessage={'PIN is incorrect'}
+          errorMessage={'Invalid PIN. Please try again.'}
           isProcessing={onVerifying ? false : isLoading}
+        />
+        <ADBAlertModal 
+          title={'Oops! Wrong PIN'} 
+          message={'You’ve entered the wrong PIN too many times. Please try again later.'} 
+          onConfirmBtnPress={onPressGoBack} 
+          btnLabel={'Go back'} 
+          isVisible={isShowErrorPinPopup} 
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
