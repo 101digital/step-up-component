@@ -42,8 +42,8 @@ export default function StepUpComponent({ navigation, route }: any) {
   const [isShowErrorPinPopup, setIsShowErrorPinPopup] = useState<boolean>(false);
   const { setIsSignedIn } = useContext(AuthContext);
 
-  const verifyBiometric = async () => {
-    if (isBiometricEnabled) {
+  const verifyBiometric = async (isEnabled?: true) => {
+    if (isEnabled || isBiometricEnabled) {
       setIsLoading(true);
       PingOnesdkModule.setCurrentSessionId('');
       try {
@@ -126,18 +126,18 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   useEffect(() => {
     checkDeviceBinding();
+    runSubsequentLoginFlow();
   }, []);
   
   const runSubsequentLoginFlow = async () => {
     const isEnabled = await StepUpUtils.getIsEnableBiometric();
     if (isEnabled && JSON.parse(isEnabled)) {
+      await verifyBiometric(true);
       setIsBiometricEnabled(true);
-      await verifyBiometric();
     }
   };
 
   const checkDeviceBinding = async () => {
-    PingOnesdkModule.setCurrentSessionId('');
     const isDeviceBinded = await PingOnesdkModule.isDeviceBinded();
     if (!isDeviceBinded || (Platform.OS === 'ios' && JSON.parse(isDeviceBinded) === false)) {
       Alert.alert(
@@ -147,7 +147,6 @@ export default function StepUpComponent({ navigation, route }: any) {
       setIsSignedIn(false);
       return;
     }
-    runSubsequentLoginFlow();
   };
 
   const onPressGoBack = () => {
@@ -161,8 +160,6 @@ export default function StepUpComponent({ navigation, route }: any) {
       setIsShowErrorPinPopup(true);
     }
   }, [validateAttempt])
-
-  console.log('validateAttempt', validateAttempt);
 
   return (
     <SafeAreaView style={styles.container}>
