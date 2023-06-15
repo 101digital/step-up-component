@@ -24,6 +24,7 @@ export type StepUpScreenParams = {
   onFailedVerified?: () => void;
   onSuccessVerified?: () => void;
   onVerifying?: () => void;
+  onBack?: () => void;
 };
 
 export const PASSWORD_LOCKED_OUT = 'PASSWORD_LOCKED_OUT';
@@ -36,7 +37,7 @@ export default function StepUpComponent({ navigation, route }: any) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isNotMatched, setIsNotMatched] = useState<boolean>(false);
   const { PingOnesdkModule } = NativeModules;
-  const { onFailedVerified, onSuccessVerified, onVerifying } = route.params;
+  const { onFailedVerified, onSuccessVerified, onVerifying, onBack } = route.params;
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
   const [validateAttempt, setValidateAttempt] = useState<number>(1);
   const [isShowErrorPinPopup, setIsShowErrorPinPopup] = useState<boolean>(false);
@@ -121,7 +122,8 @@ export default function StepUpComponent({ navigation, route }: any) {
   }, [resumeURL]);
 
   const onGoBack = () => {
-    navigation.goBack();
+      navigation.goBack();
+      onBack?.();
   };
 
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   const onPressGoBack = () => {
     setIsShowErrorPinPopup(false);
-    navigation.goBack();
+    onGoBack();
   }
 
 
