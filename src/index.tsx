@@ -12,19 +12,28 @@ import {
   View,
 } from 'react-native';
 import { colors, fonts } from './assets';
-import { ADBAlertModal, AlertModal, PinNumberComponent } from 'react-native-theme-component';
+import {
+  ADBAlertModal,
+  LoadingModal,
+  PinNumberComponent,
+  ThemeContext,
+} from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
 import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
 import { StepUpContext } from './context/stepup-context';
 import StepUpUtils from './service/utils';
-import { AuthContext, VerificationMethod } from 'react-native-auth-component';
+import { AuthContext } from 'react-native-auth-component';
 
 export type StepUpScreenParams = {
+  onFailedBiometric?: () => void;
   onFailedVerified?: () => void;
   onSuccessVerified?: () => void;
   onVerifying?: () => void;
   onBack?: () => void;
+  onFailedTitle?: string;
+  onFailedSubTitle?: string;
+  onFailedBtnTitle?: string;
 };
 
 export const PASSWORD_LOCKED_OUT = 'PASSWORD_LOCKED_OUT';
@@ -37,11 +46,21 @@ export default function StepUpComponent({ navigation, route }: any) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isNotMatched, setIsNotMatched] = useState<boolean>(false);
   const { PingOnesdkModule } = NativeModules;
-  const { onFailedVerified, onSuccessVerified, onVerifying, onBack } = route.params;
+  const {
+    onFailedVerified,
+    onSuccessVerified,
+    onVerifying,
+    onBack,
+    onFailedTitle,
+    onFailedSubTitle,
+    onFailedBtnTitle,
+  } = route.params;
   const [isBiometricEnabled, setIsBiometricEnabled] = useState<boolean>(false);
   const [validateAttempt, setValidateAttempt] = useState<number>(1);
-  const [isShowErrorPinPopup, setIsShowErrorPinPopup] = useState<boolean>(false);
+  const [isShowErrorPinPopup, setIsShowErrorPinPopup] =
+    useState<boolean>(false);
   const { setIsSignedIn } = useContext(AuthContext);
+  const { i18n } = useContext(ThemeContext);
 
   const verifyBiometric = async (isEnabled?: true) => {
     if (isEnabled || isBiometricEnabled) {
@@ -62,9 +81,9 @@ export default function StepUpComponent({ navigation, route }: any) {
             }
           }
         }
-        onFailedVerified();
+        setIsLoading(false);
       } catch (error) {
-        onFailedVerified();
+        setIsLoading(false);
       }
     }
   };
@@ -122,29 +141,34 @@ export default function StepUpComponent({ navigation, route }: any) {
   }, [resumeURL]);
 
   const onGoBack = () => {
-      navigation.goBack();
-      onBack?.();
+    console.log('onGoBack -> component');
+    navigation.goBack();
+    onBack?.();
   };
 
   useEffect(() => {
     checkDeviceBinding();
     runSubsequentLoginFlow();
   }, []);
-  
+
   const runSubsequentLoginFlow = async () => {
     const isEnabled = await StepUpUtils.getIsEnableBiometric();
     if (isEnabled && JSON.parse(isEnabled)) {
-      await verifyBiometric(true);
       setIsBiometricEnabled(true);
+      await verifyBiometric(true);
     }
   };
 
   const checkDeviceBinding = async () => {
     const isDeviceBinded = await PingOnesdkModule.isDeviceBinded();
-    if (!isDeviceBinded || (Platform.OS === 'ios' && JSON.parse(isDeviceBinded) === false)) {
+    if (
+      !isDeviceBinded ||
+      (Platform.OS === 'ios' && JSON.parse(isDeviceBinded) === false)
+    ) {
       Alert.alert(
-        'Ping Binding Deleted',
-        'This device no longer binded with your account, perhaps this is fresh install or you used the connected account in another device recently or your account is hard rejected, if not then please raise a bug.'
+        i18n.t('stepup.ping_device_deleted_title') ?? 'Ping Binding Deleted',
+        i18n.t('stepup.ping_device_deleted_title_message') ??
+          'This device no longer binded with your account, perhaps this is fresh install or you used the connected account in another device recently or your account is hard rejected, if not then please raise a bug.'
       );
       setIsSignedIn(false);
       return;
@@ -154,14 +178,15 @@ export default function StepUpComponent({ navigation, route }: any) {
   const onPressGoBack = () => {
     setIsShowErrorPinPopup(false);
     onGoBack();
-  }
-
+  };
 
   useEffect(() => {
-    if(validateAttempt > 3) {
+    if (validateAttempt > 3) {
       setIsShowErrorPinPopup(true);
     }
-  }, [validateAttempt])
+  }, [validateAttempt]);
+
+  console.log('steupup -> isBiometricEnabled', isShowErrorPinPopup);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -172,9 +197,12 @@ export default function StepUpComponent({ navigation, route }: any) {
               <GoBackArrowIcon size={20} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.title}>{'Enter your 6-digit PIN'}</Text>
+          <Text style={styles.title}>
+            {i18n.t('stepup.title') ?? 'Enter your 6-digit PIN'}
+          </Text>
           <Text style={styles.subTitle}>
-            {'Enter your 6-digit PIN to continue.'}
+            {i18n.t('stepup.sub_title') ??
+              'Enter your 6-digit PIN to continue.'}
           </Text>
         </View>
         <PinNumberComponent
@@ -185,17 +213,33 @@ export default function StepUpComponent({ navigation, route }: any) {
           clearError={() => setIsNotMatched(false)}
           isBiometricEnable={isBiometricEnabled}
           showError={isNotMatched}
-          errorMessage={'Invalid PIN. Please try again.'}
-          isProcessing={onVerifying ? false : isLoading}
+          errorMessage={
+            i18n.t('stepup.invalid_pin_message') ??
+            'Invalid PIN. Please try again.'
+          }
+          isProcessing={false}
         />
-        <ADBAlertModal 
-          title={'Oops! Wrong PIN'} 
-          message={'You’ve entered the wrong PIN too many times. Please try again later.'} 
-          onConfirmBtnPress={onPressGoBack} 
-          btnLabel={'Go back'} 
-          isVisible={isShowErrorPinPopup} 
+        <ADBAlertModal
+          title={
+            onFailedTitle ??
+            i18n.t('stepup.validate_failed_title_message') ??
+            'Oops! Wrong PIN'
+          }
+          message={
+            onFailedSubTitle ??
+            i18n.t('stepup.validate_failed_subtitle_message') ??
+            'You’ve entered the wrong PIN too many times. Please try again later.'
+          }
+          onConfirmBtnPress={onPressGoBack}
+          btnLabel={
+            onFailedBtnTitle ??
+            i18n.t('stepup.go_back_btn_message') ??
+            'Go back'
+          }
+          isVisible={isShowErrorPinPopup}
         />
       </KeyboardAvoidingView>
+      {isLoading && <LoadingModal shouldShow={isLoading} />}
     </SafeAreaView>
   );
 }
