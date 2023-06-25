@@ -52,71 +52,9 @@ export function useStepUpContextValue(): StepUpContextData {
         referenceId: refId,
         screen: '',
         contextData: contextData,
+        flowId: flow,
       };
-
-      switch (flow) {
-        case StepUpFlow.CARD_ISSUANCE:
-          data = {
-            ...data,
-            flowId: StepUpFlow.CARD_ISSUANCE,
-          };
-          break;
-        case StepUpFlow.CARD_PCI_DATA:
-          data = {
-            ...data,
-            flowId: StepUpFlow.CARD_PCI_DATA,
-          };
-          break;
-        case StepUpFlow.CARD_PIN:
-          data = {
-            ...data,
-            flowId: StepUpFlow.CARD_PIN,
-          };
-          break;
-        case StepUpFlow.CARD_LOCK:
-          data = {
-            ...data,
-            flowId: StepUpFlow.CARD_LOCK,
-          };
-          break;
-        case StepUpFlow.CARD_UNLOCK:
-          data = {
-            ...data,
-            flowId: StepUpFlow.CARD_UNLOCK,
-          };
-          break;
-        case StepUpFlow.CARD_LIMIT:
-          data = {
-            ...data,
-            flowId: StepUpFlow.CARD_LIMIT,
-          };
-          break;
-        case StepUpFlow.S3D_AUTH:
-          data = {
-            ...data,
-            flowId: StepUpFlow.S3D_AUTH,
-          };
-          break;
-        case StepUpFlow.NAD_MAINTENACE:
-          data = {
-            ...data,
-            flowId: StepUpFlow.NAD_MAINTENACE,
-          };
-          break;
-        case StepUpFlow.NAD_REGISTER:
-          data = {
-            ...data,
-            flowId: StepUpFlow.NAD_REGISTER,
-          };
-          break;
-        case StepUpFlow.QR_PAYMENT:
-          data = {
-            ...data,
-            flowId: StepUpFlow.QR_PAYMENT,
-          };
-          break;
-      }
-
+      
       try {
         await StepUpServiceInstance.generateNotification(data);
         return true;

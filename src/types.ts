@@ -14,7 +14,8 @@ export enum StepUpFlow {
     NAD_ACTIVATION = 'nad-activation',
     NAD_DEREGISTRATION = 'nad-deregistration',
     QR_PAYMENT = 'payment-authorization',
-    NAD_MAINTENACE = 'nad-maintenance'
+    NAD_MAINTENACE = 'nad-maintenance',
+    PAYMENT_LIMIT = 'payment-limit'
 }
 
 export type NotificationData = {
