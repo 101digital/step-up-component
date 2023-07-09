@@ -1,8 +1,8 @@
 export const fonts = {
-  bold: 'Poppins-Bold',
-  medium: 'Poppins-Medium',
-  regular: 'Poppins-Regular',
-  semiBold: 'Poppins-SemiBold',
+  bold: 'Outfit-SemiBold',
+  medium: 'Outfit-Medium',
+  regular: 'Outfit-Regular',
+  semiBold: 'Outfit-SemiBold',
 };
 
 //

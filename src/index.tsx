@@ -20,7 +20,7 @@ import {
 } from 'react-native-theme-component';
 import { OTPFieldRef } from 'react-native-theme-component/src/otp-field';
 import SInfo from 'react-native-sensitive-info';
-import { GoBackArrowIcon } from './assets/icons/go-back-arrow.icon';
+import { ADBBackArrowIcon } from '@/assets/icons';
 import { StepUpContext } from './context/stepup-context';
 import StepUpUtils from './service/utils';
 import { AuthContext } from 'react-native-auth-component';
@@ -186,7 +186,6 @@ export default function StepUpComponent({ navigation, route }: any) {
     }
   }, [validateAttempt]);
 
-  console.log('steupup -> isBiometricEnabled', isShowErrorPinPopup);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -194,7 +193,7 @@ export default function StepUpComponent({ navigation, route }: any) {
         <View style={styles.header}>
           <View style={styles.navigationSection}>
             <TouchableOpacity onPress={onGoBack}>
-              <GoBackArrowIcon size={20} />
+              <ADBBackArrowIcon size={20} color={colors.primaryHifiColor} />
             </TouchableOpacity>
           </View>
           <Text style={styles.title}>
@@ -218,6 +217,7 @@ export default function StepUpComponent({ navigation, route }: any) {
             'Invalid PIN. Please try again.'
           }
           isProcessing={false}
+          isStepUp={true}
         />
         <ADBAlertModal
           title={
