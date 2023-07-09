@@ -189,7 +189,7 @@ export default function StepUpComponent({ navigation, route }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView style={styles.container}>
+      <KeyboardAvoidingView style={styles.wrapper}>
         <View style={styles.header}>
           <View style={styles.navigationSection}>
             <TouchableOpacity onPress={onGoBack}>
@@ -246,6 +246,10 @@ export default function StepUpComponent({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  wrapper: {
+    flex: 1,
+    marginBottom:15
   },
   title: {
     fontSize: 24,
