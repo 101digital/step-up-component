@@ -217,7 +217,6 @@ export default function StepUpComponent({ navigation, route }: any) {
             'Invalid PIN. Please try again.'
           }
           isProcessing={false}
-          isStepUp={true}
         />
         <ADBAlertModal
           title={
