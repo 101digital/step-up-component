@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginHorizontal: 25,
-    marginTop: 24
+    marginTop: "6.6%"
   },
   bottomSection: {
     marginBottom: 15
