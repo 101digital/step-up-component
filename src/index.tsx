@@ -21,7 +21,6 @@ import {
 } from "react-native-theme-component";
 import { OTPFieldRef } from "react-native-theme-component/src/otp-field";
 import SInfo from "react-native-sensitive-info";
-import { ADBBackArrowIcon } from "@/assets/icons";
 import { StepUpContext } from "./context/stepup-context";
 import StepUpUtils from "./service/utils";
 import { AuthContext } from "react-native-auth-component";
@@ -192,20 +191,6 @@ export default function StepUpComponent({ navigation, route }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView style={styles.wrapper}>
-        <View style={styles.header}>
-          <View style={styles.navigationSection}>
-            <TouchableOpacity onPress={onGoBack}>
-              <ADBBackArrowIcon size={20} color={colors.primaryHifiColor} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.title}>
-            {i18n.t("stepup.title") ?? "Enter your 6-digit PIN"}
-          </Text>
-          <Text style={styles.subTitle}>
-            {i18n.t("stepup.sub_title") ??
-              "Enter your 6-digit PIN to continue."}
-          </Text>
-        </View>
         <View
           style={{ flex: 1, maxWidth: windowWidth - 50, marginHorizontal: 25 }}
         >
