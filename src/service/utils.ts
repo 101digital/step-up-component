@@ -54,7 +54,7 @@ class StepUpUtils {
       );
 
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
-    } catch (error) {
+    } catch (error:any) {
       return error?.response?.data;
     }
   };
@@ -77,7 +77,7 @@ class StepUpUtils {
         return biometricChangeErrorCode;
       }
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
-    } catch (error) {
+    } catch (error:any) {
       if (error?.message === 'Key permanently invalidated') {
         return biometricChangeErrorCode;
       }

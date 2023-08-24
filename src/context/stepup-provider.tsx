@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
-import { useStepUpContextValue, StepUpContext } from './stepup-context';
+import React, { ReactNode } from "react";
+import { useStepUpContextValue, StepUpContext } from "./stepup-context";
 
 export type StepUpProviderProps = {
   children: ReactNode;
