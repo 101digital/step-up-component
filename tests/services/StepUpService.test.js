@@ -37,6 +37,23 @@ describe("StepUp Service", () => {
     expect(responseData).toEqual(undefined);
     spy.mockRestore();
   });
+  it("spy on generateNotification error", async () => {
+    let data = {
+      type: "STEPUP",
+      referenceId: undefined,
+      screen: "",
+      contextData: "VirtualDebitCard",
+      flowId: StepUpFlow.CARD_ISSUANCE,
+    };
+    let service = StepUpService.instance();
+    let spy = jest.spyOn(service, "generateNotification");
+    try{
+       await service.generateNotification(data);
+    }catch(err) {
+      expect(err).toEqual(Error('mfa client not available'));
+    }
+    spy.mockRestore();
+  });
   it("spy on authorizePushOnly", async () => {
     let service = StepUpService.instance();
     const mockResponse = "mock authorizePushOnly response";
