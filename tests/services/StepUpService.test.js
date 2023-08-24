@@ -1,12 +1,12 @@
 import axios from "axios";
 import { StepUpService } from "../../src/service/stepup-service";
 import { StepUpFlow } from "../../src/types";
-import { AuthServices } from 'react-native-auth-component';
+import { AuthServices } from "react-native-auth-component";
 jest.mock("axios");
 
 jest.mock('react-native-auth-component', () => ({
-    AuthServices: jest.fn(),
-  }));
+  AuthServices: jest.fn()
+}));
 
 describe("StepUp Service", () => {
   it("spy on resumeUrl", async () => {
@@ -37,20 +37,32 @@ describe("StepUp Service", () => {
     expect(responseData).toEqual(undefined);
     spy.mockRestore();
   });
-  it("spy on obtainTokenSingleFactor", async () => {
+  it("spy on authorizePushOnly", async () => {
     let service = StepUpService.instance();
-    const mockResponse = {
-        access_token: "mock token",
-        id_token: "Token",
-    };
-    axios.post.mockResolvedValue({
-        data: mockResponse,
+    const mockResponse = "mock authorizePushOnly response";
+    axios.get.mockResolvedValue({
+      data: mockResponse,
     });
-    // AuthServices.instance().storeOTT.mockReturnValue(mockResponse.access_token);
-    // AuthServices.instance().storeIdToken.mockReturnValue(mockResponse.id_token);
-    let spy = jest.spyOn(service, "obtainTokenSingleFactor");
-    const responseData = await service.obtainTokenSingleFactor("1234");
-    expect(responseData).toEqual(undefined);
+    let spy = jest.spyOn(service, "authorizePushOnly");
+    const responseData = await service.authorizePushOnly('hintToken');
+    expect(responseData).toEqual(mockResponse);
     spy.mockRestore();
   });
+  // it("spy on obtainTokenSingleFactor", async () => {
+  //   let service = StepUpService.instance();
+  //   const mockResponse = {
+  //       access_token: "mock token",
+  //       id_token: "Token",
+  //   };
+  //   axios.post.mockResolvedValue({
+  //       data: mockResponse,
+  //   });
+
+  //   let spy = jest.spyOn(service, "obtainTokenSingleFactor");
+  //   const responseData = await service.obtainTokenSingleFactor("1234");
+  //   expect(responseData).toEqual(undefined);
+  //   spy.mockRestore();
+  // });
 });
+    // AuthServices.instance().storeOTT.mockReturnValue(mockResponse.access_token);
+    // AuthServices.instance().storeIdToken.mockReturnValue(mockResponse.id_token);

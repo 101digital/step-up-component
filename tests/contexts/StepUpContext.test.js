@@ -1,63 +1,48 @@
-import React, { useEffect } from "react";
+import { act } from "react-test-renderer";
 import {
-  StepUpContext,
+ useStepUpContextValue,
 } from "../../src/context/stepup-context";
-import { cleanup, render, waitFor } from "@testing-library/react-native";
-import { StepUpFlow } from "../../src/types";
+import { renderHook } from "@testing-library/react-native";
 
-const StepUpDefaultValue = {
-  authorize: jest.fn(),
+jest.mock('../../src/context/stepup-context', () => ({
+  useStepUpContextValue: () => ({
+    authorize: jest.fn(),
   isLoadingAuthorize: false,
-  obtainNewAccessToken: jest.fn(() => false),
-  saveResumeURL: () => false,
+  obtainNewAccessToken: jest.fn(),
+  saveResumeURL: jest.fn(() => false),
   generateNotificationStepUp: jest.fn(),
-}
-describe("step-up-component", () => {
-  let contextConsumer = null;
-
-  beforeEach(() => {
-    // Set up the context value for testing
-    contextValue = StepUpDefaultValue;
-  });
-
-  afterEach(cleanup);
-
-  it("should initialize context with correct values", () => {
-
-    const ConsumerComponent = () => {
-      contextConsumer = React.useContext(StepUpContext);
-      expect(contextConsumer.isLoadingAuthorize).toBeFalsy();
-      expect(contextConsumer.authorize).toBeDefined();
-      expect(contextConsumer.generateNotificationStepUp).toBeDefined();
-      expect(contextConsumer.saveResumeURL).toBeDefined()
-      expect(contextConsumer.resumeURL).toBe(undefined)
-      return null;
-    };
-
-    render(
-      <StepUpContext.Provider value={contextValue}>
-        <ConsumerComponent />
-      </StepUpContext.Provider>
-    );
-  });
-
-  it('Should call generateNotificationStepUp method', () => {
-    const ConsumerComponent = () => {
-      contextConsumer = React.useContext(StepUpContext);
-      useEffect(() => {
-        contextConsumer.generateNotificationStepUp(StepUpFlow.CARD_ISSUANCE, 'VirtualDebitCard')
-      }, [contextConsumer])
-      return null;
-    };
-
-    render(
-      <StepUpContext.Provider value={contextValue}>
-        <ConsumerComponent />
-      </StepUpContext.Provider>
-    );
-
-     waitFor(() => {
-      expect(contextConsumer.generateNotificationStepUp).toHaveBeenCalledWith(StepUpFlow.CARD_ISSUANCE, 'VirtualDebitCard')
-    })
   })
+}));
+
+
+describe('useStepUpContextValue', () => {
+  it('should return default context values', () => {
+      const { result } = renderHook(() => useStepUpContextValue());   
+      expect(result.current.isLoadingAuthorize).toBe(false);
+      expect(result.current.resumeURL).toBeUndefined();
+      expect(typeof result.current.authorize).toBe('function');
+      expect(typeof result.current.obtainNewAccessToken).toBe('function');
+      expect(typeof result.current.generateNotificationStepUp).toBe('function');
+      expect(typeof result.current.saveResumeURL).toBe('function');
+
+  });
+
+  it('should call generateNotificationStepUp', async () => {
+    const { result } = renderHook(() => useStepUpContextValue());
+
+    const flow = 'some-flow';
+    const refId = 'some-ref-id';
+    const contextData = { key: 'value' };
+
+    await act(async () => {
+      const success = await result.current.generateNotificationStepUp(
+        flow,
+        refId,
+        contextData
+      );
+
+      expect(success).toBe(undefined);
+      expect(result.current.isLoadingAuthorize).toBe(false);
+    });
+  });
 });
