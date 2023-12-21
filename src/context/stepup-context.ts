@@ -10,7 +10,7 @@ export interface StepUpContextData {
   resumeURL?: string;
   generateNotificationStepUp: (
     flow: StepUpFlow,
-    refId: string,
+    refId?: string,
     contextData?: object
   ) => Promise<boolean | undefined>;
 }
@@ -42,7 +42,11 @@ export function useStepUpContextValue(): StepUpContextData {
   }, []);
 
   const generateNotificationStepUp = useCallback(
-    async (flow: StepUpFlow, refId: string, contextData: any) => {
+    async (
+      flow: StepUpFlow,
+      refId = '18181-98425-11636-67763',
+      contextData
+    ) => {
       let data: NotificationData = {
         type: 'STEPUP',
         referenceId: refId,
@@ -50,7 +54,7 @@ export function useStepUpContextValue(): StepUpContextData {
         contextData: contextData,
         flowId: flow,
       };
-
+      
       try {
         await StepUpServiceInstance.generateNotification(data);
         return true;

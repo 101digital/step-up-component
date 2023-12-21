@@ -1,26 +1,26 @@
-import CryptoStore from './crypto';
-import SInfo from 'react-native-sensitive-info';
-import base64 from 'react-native-base64';
-import { StepUpService } from './stepup-service';
-import { generateSecureRandom } from 'react-native-securerandom';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import CryptoStore from "./crypto";
+import SInfo from "react-native-sensitive-info";
+import base64 from "react-native-base64";
+import { StepUpService } from "./stepup-service";
+import { generateSecureRandom } from "react-native-securerandom";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const IS_ENABLE_BIOMETRIC = 'authcomponent.enableBio';
-const PIN_TOKEN = 'authcomponent.pinToken';
-const BIO_TOKEN = 'authcomponent.biometricToken.currentSet';
+const IS_ENABLE_BIOMETRIC = "authcomponent.enableBio";
+const PIN_TOKEN = "authcomponent.pinToken";
+const BIO_TOKEN = "authcomponent.biometricToken.currentSet";
 
 const keySize = 256;
 const cost = 10000;
 const saltLength = 12;
 
 const sensitiveInfoOptions = {
-  sharedPreferencesName: 'mySharedPrefs',
-  keychainService: 'myKeychain',
+  sharedPreferencesName: "mySharedPrefs",
+  keychainService: "myKeychain",
 };
 
 const biometricChangeErrorCode = {
   error: {
-    code: 'BIOMETRIC_CHANGE',
+    code: "BIOMETRIC_CHANGE",
   },
 };
 
@@ -28,13 +28,13 @@ class StepUpUtils {
   getIsEnableBiometric = () => AsyncStorage.getItem(IS_ENABLE_BIOMETRIC);
 
   getSalt = async () => {
-    const salt = await SInfo.getItem('key', sensitiveInfoOptions);
+    const salt = await SInfo.getItem("key", sensitiveInfoOptions);
     if (!!salt && salt.length > 0) {
       return base64.decode(salt);
     } else {
       const random = await generateSecureRandom(saltLength);
       const encoded = base64.encodeFromByteArray(random);
-      SInfo.setItem('key', encoded, sensitiveInfoOptions);
+      SInfo.setItem("key", encoded, sensitiveInfoOptions);
 
       return base64.decode(encoded);
     }
@@ -66,19 +66,19 @@ class StepUpUtils {
         touchID: true,
         showModal: true,
         strings: {
-          description: 'Do you want to allow {ADB} to use Finger Print ID?',
+          description: "Do you want to allow {AS} to use Finger Print ID?",
           header:
-            '{ADB} uses Finger Print ID to restrict unauthorized users from accessing the app.',
+            "{AS} uses Finger Print ID to restrict unauthorized users from accessing the app.",
         },
         kSecUseOperationPrompt:
-          'We need your permission to retrieve encrypted data',
+          "We need your permission to retrieve encrypted data",
       });
       if (!loginHintToken) {
         return biometricChangeErrorCode;
       }
       return await StepUpService.instance().authorizePushOnly(loginHintToken);
     } catch (error) {
-      if (error?.message === 'Key permanently invalidated') {
+      if (error?.message === "Key permanently invalidated") {
         return biometricChangeErrorCode;
       }
       return error?.response?.data;
